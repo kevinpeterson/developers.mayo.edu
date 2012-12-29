@@ -1,0 +1,193 @@
+<html> 
+<head> 
+<title>developers.mayo.edu</title> 
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script> 
+<script type="text/javascript" src="lib/jquery.terminal-0.4.22.min.js"></script> 
+<script type="text/javascript" src="lib/star_wars.js"></script> 
+<link href="lib/jquery.terminal.css" rel="stylesheet"/>
+<style type="text/css"> 
+	body {
+		background-color: #000
+	}
+	.console {
+		font-family: courier, monospace;
+		color: #fff;
+		width:565px;
+		margin-left:auto;
+		margin-right:auto;
+		margin-top:100px;
+		font-size:14px;
+        border:1px solid #AAAAAA;
+	}
+    #movieControls {
+        font-family: courier, monospace;
+        width:200px;
+        margin-left:auto;
+        margin-right:auto;
+        font-size:14px;
+        color: #fff;
+        text-align: center;
+    }
+	a {
+		color: #0bc;
+		text-decoration: none;
+	}
+	#a {
+		color: #0f0;
+	}
+	#c {
+		color: #0bc;
+	}
+	#b {
+		color: #ff0096;
+	}
+</style> 
+</head> 
+<body> 
+
+<script> 
+    $(function() {
+
+    // ------------------------------------------------------------
+    // STARWARS
+    // ------------------------------------------------------------
+    var frames = [];
+    var LINES_PER_FRAME = 14;
+    var DELAY = 67;
+    var lines = star_wars.length;
+    for (var i=0; i<lines; i+=LINES_PER_FRAME) {
+        frames.push(star_wars.slice(i, i+LINES_PER_FRAME));
+    }
+    var stop = false;
+    function movieCredits(term) {
+        term.echo('\nSTAR WARS ASCIIMACTION\n'+
+                  'Simon Jansen (C) 1997 - 2008\n'+
+                  'www.asciimation.co.nz\n\n'+
+                  'Press CTRL+D to stop');
+    }
+
+    function play(term, delay) {
+        var i = 0;
+        var next_delay;
+        if (delay == undefined) {
+            delay = DELAY;
+        }
+        function display() {
+            if (!stop) {
+                if (i == frames.length) {
+                    i = 0;
+                }
+                term.clear();
+                if (frames[i][0].match(/[0-9]+/)) {
+                    next_delay = frames[i][0] * delay;
+                } else {
+                    next_delay = delay;
+                }
+                term.echo(frames[i++].slice(1).join('\n')+'\n');
+                setTimeout(display, next_delay);
+            } else {
+                i = 0;
+            }
+        }
+        display();
+    }
+
+
+    var files = {
+        'about.txt' : "This is the developers terminal."
+    }
+
+    var commands = {
+    	'date' : function(term){
+    		term.echo(new Date());
+    	},
+        'cat' : function(term, file){
+            term.echo(files[file]);
+        },
+        'ls' : function(term, file){
+            for (var key in files) {
+                term.echo(key);
+            }
+        },
+    	'help' : function(term){
+    		for (var key in commands) {
+    			term.echo(key);
+			}
+    	},
+        'play' : function(term){
+            movieCredits(term);
+            term.pause();
+            setTimeout(function(){
+                stop = false;
+                $('#movieControls').show();
+                play(term);
+            }, 4000);     
+        }
+
+
+    }
+
+    function typedPrompt(term, message, delay, finish) {
+        anim = true;
+        var c = 0;
+        term.set_prompt('');
+        var interval = setInterval(function() {
+        	var character = message[c++];
+            term.insert(character);
+            if(c > message.length - 1) {
+                clearInterval(interval);
+                // execute in next interval
+                setTimeout(function() {
+                    // swap command with prompt
+                    term.set_command('')
+                    term.echo(message + ' ');
+                    anim = false
+                    finish && finish();
+                }, delay);
+            }
+        }, delay);
+    }
+    $('#terminal').terminal(function(cmd, term) {
+        var cmd = cmd.split(" ");
+    	var cmdFunction = commands[cmd[0]];
+    	if(cmdFunction){
+        	cmdFunction(term, cmd[1]);
+    	} else {
+    		term.echo(cmd + ": command not found. Type 'help' for a list of all commands.");
+    	}
+    }, {
+        name: 'xxx',
+        greetings: null,
+        width: 565,
+        height: 300,
+        onInit: function(term) {
+            // first question
+            var msg = "Welcome to my terminal";
+            typedPrompt(term, msg, 50, function() {
+            	term.set_command('')
+                term.set_prompt('$>');
+            });
+        },
+        keydown: function(e) {
+            //disable keyboard when animating
+            if (anim) {
+                return false;
+            }
+        },
+        keypress: function(e, term) {
+            if (e.which == 100 && e.ctrlKey) {
+                stop = true;
+                term.resume();
+                $('#movieControls').hide();
+                return false;
+            }
+        }
+    });
+});
+</script> 
+  <div id="terminal" class="console"></div>
+  <div id="movieControls" style="display:none">
+    <p>CTRL+D to Stop</p>
+  </div>
+</body> 
+</html> 

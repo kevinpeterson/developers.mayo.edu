@@ -92,95 +92,61 @@
         display();
     }
 
-
-    var files = {
-        'about.txt' : "This is the developers terminal."
+    var help = {
+        'date' : "Print the current Date and Time.",
+        'help' : "Prints this help message.",
+        'lambdaWiki' : "Redirects to the LambdaWiki.",
+        'starWars' : "Plays a StarWars movie."
     }
 
     var commands = {
-    	'date' : function(term){
-    		term.echo(new Date());
+    	'date' : function(){
+    		this.echo(new Date());
     	},
-        'cat' : function(term, file){
-            term.echo(files[file]);
-        },
-        'ls' : function(term, file){
-            for (var key in files) {
-                term.echo(key);
-            }
-        },
-    	'help' : function(term){
+    	'help' : function(){
+            this.echo("\n");
+            this.echo("=================");
+            this.echo("Terminal Commands");
+            this.echo("=================");
     		for (var key in commands) {
-    			term.echo(key);
+    			this.echo("[[b;;]"+key+"]: " + help[key]);
 			}
     	},
-        'play' : function(term){
+        'lambdaWiki' : function(){
+            this.echo("LambdaWiki - maximum warp. Engage...");
+            setTimeout(function(){
+                window.location.href = 'http://developers.mayo.edu/wiki/lambda/Main';
+            }, 2000);
+        },
+        'starWars' : function(){
+            var term = this;
             movieCredits(term);
             term.pause();
             setTimeout(function(){
                 stop = false;
                 $('#movieControls').show();
                 play(term);
-            }, 4000);     
+            }, 3000);     
         }
-
-
     }
 
-    function typedPrompt(term, message, delay, finish) {
-        anim = true;
-        var c = 0;
-        term.set_prompt('');
-        var interval = setInterval(function() {
-        	var character = message[c++];
-            term.insert(character);
-            if(c > message.length - 1) {
-                clearInterval(interval);
-                // execute in next interval
-                setTimeout(function() {
-                    // swap command with prompt
-                    term.set_command('')
-                    term.echo(message + ' ');
-                    anim = false
-                    finish && finish();
-                }, delay);
-            }
-        }, delay);
-    }
-    $('#terminal').terminal(function(cmd, term) {
-        var cmd = cmd.split(" ");
-    	var cmdFunction = commands[cmd[0]];
-    	if(cmdFunction){
-        	cmdFunction(term, cmd[1]);
-    	} else {
-    		term.echo(cmd + ": command not found. Type 'help' for a list of all commands.");
-    	}
-    }, {
-        name: 'xxx',
-        greetings: null,
+    $('#terminal').terminal(commands, {
+        name: 'developer terminal',
+        greetings: "[[ib;;]Welcome to the guib some text terminal.\nType 'help' for a list of all commands.]",
         width: 565,
         height: 300,
+        tabcompletion: true,
         onInit: function(term) {
-            // first question
-            var msg = "Welcome to my terminal";
-            typedPrompt(term, msg, 50, function() {
-            	term.set_command('')
-                term.set_prompt('$>');
-            });
+            term.set_prompt('$>');
         },
-        keydown: function(e) {
-            //disable keyboard when animating
-            if (anim) {
-                return false;
-            }
-        },
-        keypress: function(e, term) {
-            if (e.which == 100 && e.ctrlKey) {
-                stop = true;
-                term.resume();
-                $('#movieControls').hide();
-                return false;
-            }
+        keydown: function(event, term) {
+            if (!( String.fromCharCode(event.which).toLowerCase() == 'd' && event.ctrlKey) && !(event.which == 19)) return true;
+
+            event.preventDefault();
+            stop = true;
+            term.resume();
+            $('#movieControls').hide();
+            return false;
         }
     });
 });
